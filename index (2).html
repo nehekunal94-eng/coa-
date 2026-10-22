@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pipeline Execution: stages, hazards and stalls</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><div class="wrap"><a href="#sim">Simulator</a><a href="#learn">Concepts</a><a href="#quiz">Quiz</a></div></nav>
+<header><div class="wrap">
+<h1>Pipeline execution, one clock cycle at a time</h1>
+<p>A pipeline overlaps the work of several instructions so the CPU finishes close to one per cycle. Write a short program, switch forwarding on or off, and watch where hazards force the pipeline to stall.</p>
+<div class="stages"><span class="chip" style="background:var(--if)">IF fetch</span><span class="chip" style="background:var(--id)">ID decode</span><span class="chip" style="background:var(--ex)">EX execute</span><span class="chip" style="background:var(--mem)">MEM memory</span><span class="chip" style="background:var(--wb)">WB write back</span></div>
+</div></header>
+
+<section id="sim"><div class="wrap">
+<h2>Pipeline simulator</h2>
+<p class="sub">Classic five-stage, in-order pipeline. The register file writes in the first half of a cycle and reads in the second half, so a value written in WB can be read by ID in the same cycle.</p>
+<div class="grid">
+<div class="panel">
+<label for="prog">Program (one instruction per line)</label>
+<textarea id="prog" spellcheck="false" aria-describedby="supp"></textarea>
+<p id="supp" class="sub" style="margin:6px 0 0;font-size:.82rem">Supported: add, sub, and, or, slt, addi, lw, sw, beq, bne, nop. Labels such as <code>done:</code> are allowed.</p>
+<p class="err" id="err" role="alert"></p>
+<div class="row presets"><span>Examples:</span>
+<button data-p="ideal">No hazards</button><button data-p="raw">Data dependencies</button><button data-p="load">Load then use</button><button data-p="branch">Branch</button></div>
+<div class="row"><label class="opt"><input type="checkbox" id="fwd" checked> Data forwarding</label></div>
+<div class="row"><label for="br">Branch handling</label>
+<select id="br"><option value="pred">Predict not taken (no penalty)</option><option value="stall">Stall until branch resolves</option></select></div>
+</div>
+<div class="panel">
+<div class="stats" aria-live="polite">
+<div class="stat"><b id="sCyc">0</b><span>total cycles</span></div>
+<div class="stat"><b id="sStall">0</b><span>stall cycles</span></div>
+<div class="stat"><b id="sCpi">0</b><span>CPI (ideal 1.00)</span></div>
+<div class="stat"><b id="sSpd">0×</b><span>speedup vs no pipeline</span></div>
+</div>
+<div class="row"><button class="primary" id="play">Play</button><button id="step">Step</button><button id="reset">Reset</button><button id="all">Show all</button><span id="clk" style="font-weight:600;margin-left:4px"></span></div>
+<div class="strip" id="strip" aria-label="Instruction in each stage at the current cycle"></div>
+</div>
+</div>
+<div class="panel" style="margin-top:18px">
+<h3 style="margin-bottom:10px;font-size:1.2rem">Pipeline diagram</h3>
+<div class="scroll"><table id="tbl"></table></div>
+<p class="sub" style="margin:10px 0 0;font-size:.85rem">Hatched red cells are stalls. Grey hatching marks a bubble from a control hazard. “fwd” marks a stage that received a forwarded value.</p>
+<ul class="log" id="log"></ul>
+</div>
+</div></section>
+
+<section id="learn"><div class="wrap">
+<h2>Concepts</h2>
+<p class="sub">The three ideas behind every pipeline diagram.</p>
+<div class="cards">
+<div class="panel"><h3>Stages</h3>
+<p><b>IF</b> reads the instruction at the program counter.</p>
+<p><b>ID</b> decodes it and reads the source registers.</p>
+<p><b>EX</b> runs the ALU or computes a memory address.</p>
+<p><b>MEM</b> loads or stores data. <b>WB</b> writes the result to a register.</p>
+<p>Once full, the pipeline completes one instruction per cycle. Total time for n instructions is n + 4 cycles.</p></div>
+<div class="panel"><h3>Hazards</h3>
+<p><b>Structural:</b> two instructions need the same hardware in the same cycle, such as one memory port for fetch and data.</p>
+<p><b>Data:</b> an instruction needs a result an earlier instruction has not written yet (read after write).</p>
+<p><b>Control:</b> a branch changes the program counter, so the instructions fetched after it may be wrong.</p></div>
+<div class="panel"><h3>Stalls and fixes</h3>
+<p><b>Stall:</b> hold an instruction in ID and insert bubbles until its operands are ready.</p>
+<p><b>Forwarding:</b> send a result straight from the EX or MEM stage back to the ALU input. It removes most data stalls.</p>
+<p><b>Load-use:</b> a load’s value only exists after MEM, so even with forwarding the next instruction waits one cycle.</p>
+<p><b>Branches:</b> predict not taken, or stall until the branch resolves in EX.</p></div>
+</div></div></section>
+
+<section id="quiz"><div class="wrap">
+<h2>Check your understanding</h2>
+<p class="sub">Select an answer to see the reason.</p>
+<div class="panel" id="quizBox"></div>
+<div id="score"></div>
+</div></section>
+
+<footer><div class="wrap">Built as a study aid for computer organization: pipeline execution (stages, hazards, stalls).</div></footer>
+
+<script src="script.js"></script>
+</body>
+</html>
